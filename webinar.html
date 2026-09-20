@@ -39,6 +39,10 @@ body:has(#exit-offer[open]){overflow:hidden}.exit-offer{position:fixed;inset:0;m
 /* Offer access and supporting links. */
 .sales-page-link{text-align:center;margin:16px 0 0;font-size:.94rem;font-weight:650}.sales-page-link a,.footer-links a{text-underline-offset:4px}.footer-links{display:flex;flex-wrap:wrap;gap:8px 24px;align-items:center}.footer-links a{display:inline-flex;align-items:center;min-height:44px;font-weight:650}.offer-launcher{position:fixed;right:20px;bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:40;min-height:52px;max-width:calc(100vw - 40px);box-shadow:0 6px 24px #02061740;border:1px solid #ffedd5}footer{padding-bottom:calc(94px + env(safe-area-inset-bottom,0px))}
 @media(max-width:760px){.footer-links{margin-top:12px;gap:8px 22px}.offer-launcher{right:16px;bottom:calc(14px + env(safe-area-inset-bottom,0px))}}
+
+/* Session calendar options. */
+.calendar-card{margin-top:24px;padding-top:23px;border-top:1px solid var(--line)}.calendar-card h3{font-size:1.15rem;font-weight:800;line-height:1.3;letter-spacing:-.025em;margin:0 0 9px}.calendar-card .calendar-intro{margin:0 0 16px}.calendar-card label{font-size:.875rem;margin:0 0 8px}.calendar-card select{font:inherit;font-size:.875rem;line-height:1.4;color:var(--ink);background:#fff;border:1px solid #cbd5e1;border-radius:0;width:100%;min-width:0;min-height:48px;padding:10px 6px}.calendar-card select:focus-visible{outline:3px solid var(--orange);outline-offset:3px}.calendar-card .calendar-local{font-size:.8125rem;line-height:1.5;margin:10px 0 16px}.calendar-actions{display:grid;gap:10px}.calendar-actions .btn{font-size:.875rem;min-height:48px;padding:12px 10px;text-align:center}.calendar-card .calendar-note{font-size:.8125rem;line-height:1.55;margin:13px 0 0}
+@media(min-width:541px) and (max-width:850px){.calendar-actions{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -74,10 +78,23 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <p class="purchase-note">Choose your payment option on the order page. One learner per purchase. First instalment due at enrolment.</p>
     <a class="guarantee-link" href="#guarantee">30-day money-back guarantee</a>
    </section>
-   <div class="under-player"><p><strong>A workshop on a shared schedule.</strong> Arriving late? You’ll join where the presentation is now. If you pause or leave, you’ll rejoin at the current point.</p><div class="session-meta"><span id="duration-label"></span><span id="clock-label">Daily at 10 am and 3 pm Eastern</span></div></div>
+   <div class="under-player"><p><strong>A workshop on a shared schedule.</strong> Arriving late? You’ll join where the presentation is now. The video starts automatically during a session. Enable sound to listen. If you leave and return, you’ll rejoin at the current point.</p><div class="session-meta"><span id="duration-label"></span><span id="clock-label">Daily at 10 am and 3 pm Eastern</span></div></div>
   </div>
   <aside class="webinar-sidebar">
-   <section class="schedule" aria-labelledby="schedule-title"><h2 id="schedule-title">Upcoming sessions</h2><ul id="session-list"></ul><p id="timezone-label">Eastern time (New York). Showing times follow daylight saving time.</p></section>
+   <section class="schedule" aria-labelledby="schedule-title"><h2 id="schedule-title">Upcoming sessions</h2><ul id="session-list"></ul><p id="timezone-label">Eastern time (New York). Showing times follow daylight saving time.</p>
+    <div class="calendar-card" aria-labelledby="calendar-title">
+     <h3 id="calendar-title">Add to your calendar</h3>
+     <p class="calendar-intro">Save a session and the link to join.</p>
+     <label for="calendar-session">Choose your session</label>
+     <select id="calendar-session" aria-describedby="calendar-local calendar-note"></select>
+     <p id="calendar-local" class="calendar-local" aria-live="polite"></p>
+     <div id="calendar-actions" class="calendar-actions" hidden>
+      <a id="calendar-google" class="btn" target="_blank" rel="noopener noreferrer">Google Calendar</a>
+      <a id="calendar-file" class="btn secondary" download="FabProfit-Workshop.ics">Apple / Outlook calendar</a>
+     </div>
+     <p id="calendar-note" class="calendar-note">Save the event and check your reminder in your calendar.</p>
+    </div>
+   </section>
    <section class="workshop-guide" aria-labelledby="guide-title"><p class="offer-kicker">While you watch</p><h2 id="guide-title">Keep a recent estimate in mind.</h2><p>Follow a package of 24 powder-coated rail panels from the first cost build to the customer quote.</p><ul><li>Find work hidden inside broad allowances.</li><li>Separate markup from your intended margin.</li><li>Make the quote reflect what you priced.</li></ul><p class="case-note">The rail example is an illustrative training case in USD, before tax. Use your own rates and job conditions.</p></section>
   </aside>
  </div>
@@ -141,6 +158,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   // Greg's FabProfit workshop.
   const VIDEO_URL = 'https://vimeo.com/1228526920';
+  const WEBINAR_URL = 'https://gregsheldon.github.io/fabprofit/webinar.html';
   const TIME_ZONE = 'America/New_York';
   const SESSION_HOURS = [10, 15];
   const partsFormat = new Intl.DateTimeFormat('en-US', {
@@ -203,9 +221,58 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     return [Math.floor(s / 3600), Math.floor(s % 3600 / 60), s % 60]
       .map(v => String(v).padStart(2, '0')).join(':');
   }
+  function calendarEvent(start, seconds = 3600) {
+    return {
+      start, end: start + Math.max(60, Math.ceil(seconds || 3600)) * 1000,
+      title: 'FabProfit workshop: The hidden costs in a profitable quote',
+      url: WEBINAR_URL,
+      description: 'Join Greg Sheldon for the FabProfit estimating workshop.\nWatch: ' + WEBINAR_URL +
+        '\nSessions start at 10 am and 3 pm Eastern. This event is for the selected session only.' +
+        '\nLate arrivals join at the current point in the presentation.' +
+        '\nSet a reminder 15 minutes before the session in your calendar.' +
+        (!seconds ? '\nThis calendar event reserves one hour; the presentation may finish earlier.' : '')
+    };
+  }
+  function calendarStamp(timestamp) {
+    return new Date(timestamp).toISOString().replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  }
+  function googleCalendarUrl(event) {
+    const url = new URL('https://calendar.google.com/calendar/render');
+    url.search = new URLSearchParams({ action: 'TEMPLATE', text: event.title,
+      dates: calendarStamp(event.start) + '/' + calendarStamp(event.end),
+      details: event.description, location: event.url, ctz: TIME_ZONE }).toString();
+    return url.href;
+  }
+  function calendarFile(event, generatedAt = Date.now()) {
+    const escape = text => text.replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n')
+      .replace(/;/g, '\\;').replace(/,/g, '\\,');
+    // iCalendar uses CRLF and folds lines at 75 UTF-8 octets.
+    const encoder = new TextEncoder();
+    const fold = line => {
+      let out = '', bytes = 0;
+      for (const char of line) {
+        const size = encoder.encode(char).length;
+        if (bytes + size > 75) { out += '\r\n '; bytes = 1; }
+        out += char; bytes += size;
+      }
+      return out;
+    };
+    return [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//FabProfit//Workshop Calendar//EN',
+      'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'BEGIN:VEVENT',
+      'UID:fabprofit-' + calendarStamp(event.start) + '@gregsheldon.github.io',
+      'DTSTAMP:' + calendarStamp(generatedAt),
+      'DTSTART:' + calendarStamp(event.start), 'DTEND:' + calendarStamp(event.end),
+      'SUMMARY:' + escape(event.title), 'DESCRIPTION:' + escape(event.description),
+      'LOCATION:' + escape(event.url), 'URL:' + event.url, 'STATUS:CONFIRMED',
+      'BEGIN:VALARM', 'TRIGGER:-PT15M', 'ACTION:DISPLAY',
+      'DESCRIPTION:FabProfit workshop starts in 15 minutes', 'END:VALARM',
+      'END:VEVENT', 'END:VCALENDAR'
+    ].map(fold).join('\r\n') + '\r\n';
+  }
   // The schedule can be checked without a browser or a Vimeo connection.
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = { easternTime, stateAt, normalizeVimeoUrl, clockText };
+    module.exports = { easternTime, stateAt, normalizeVimeoUrl, clockText, calendarEvent, googleCalendarUrl, calendarFile };
     return;
   }
 
@@ -221,10 +288,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     timeZone: TIME_ZONE, weekday: 'short', month: 'short', day: 'numeric',
     hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
   });
+  const localFormat = new Intl.DateTimeFormat(undefined, {
+    weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
+  });
   let player = null, ready = false, failed = false, loading = false;
   let duration = 0, activeStart = null, endedStart = null, hadSession = false;
   let clockOffset = 0, timer = null, scriptPromise = null, syncing = false;
   let scheduleKey = '', lastSeek = 0, sessionGeneration = 0;
+  let calendarKey = '', calendarBlobUrl = '', soundOn = false;
   const now = () => Date.now() + clockOffset;
   function session() {
     const s = stateAt(now(), duration);
@@ -290,6 +361,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     loading = true;
     failed = false;
     ready = false;
+    soundOn = false;
     activeStart = null;
     sessionGeneration++;
     const generation = sessionGeneration;
@@ -304,8 +376,12 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       await loadSdk();
       if (generation !== sessionGeneration) return;
       instance = new window.Vimeo.Player('player-mount', {
+        // Playback starts automatically via playCurrent after the scheduled time is checked.
+        // Keeping embed autoplay off prevents playback between sessions while metadata loads.
         url: videoUrl, autoplay: false, muted: true, loop: false,
-        playsinline: true, controls: true, title: false, byline: false, portrait: false
+        playsinline: true, preload: 'auto', autopause: false,
+        controls: false, keyboard: false, title: false, byline: false, portrait: false,
+        badge: false, vimeo_logo: false, unmute_button: false
       });
       player = instance;
       instance.on('play', () => {
@@ -316,6 +392,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       });
       instance.on('pause', () => {
         if (player === instance && ready && session().running) {
+          soundOn = false;
           setJoin('Rejoin current session', 'Playback paused. The session schedule continues.');
         }
       });
@@ -323,6 +400,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       instance.on('seeked', () => reconcile());
       instance.on('ended', () => {
         if (player !== instance || !ready) return;
+        soundOn = false;
         const s = session();
         if (s.elapsed >= duration - 3) { endedStart = s.start; render(); }
         else setJoin('Rejoin current session', 'Join the presentation at the current point.');
@@ -344,7 +422,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       loading = failed = false;
       clearTimeout(timer);
       const iframe = $('player-mount').querySelector('iframe');
-      if (iframe) iframe.title = 'FabProfit workshop';
+      if (iframe) {
+        iframe.title = 'FabProfit workshop';
+        iframe.setAttribute('allow', 'autoplay; fullscreen; encrypted-media; picture-in-picture');
+      }
       $('duration-label').textContent = Math.round(duration / 60) + ' minute presentation';
       render();
     } catch {
@@ -357,11 +438,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     try {
       const paused = await p.getPaused(), muted = await p.getMuted();
       if (p !== player || failed || !session().running) return;
+      soundOn = !paused && !muted;
       if (paused) setJoin('Join webinar', 'Tap to join at the current point in the presentation.');
       else if (muted) setJoin('Enable sound', 'The session is playing. Enable sound to listen.');
       else {
-        $('join').hidden = true;
-        $('playback-message').textContent = 'You are watching the current scheduled session.';
+        setJoin('Mute sound', 'You are watching the current scheduled session.');
       }
     } catch { /* A replacement player will update its own controls. */ }
   }
@@ -416,9 +497,39 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       $('session-list').append(li);
     }
   }
+  function renderCalendar(s) {
+    const select = $('calendar-session');
+    if (!select) return;
+    const previous = Number(select.value);
+    const chosen = s.upcoming.includes(previous) ? previous : s.next;
+    const key = s.upcoming.join(',') + '|' + chosen + '|' + duration;
+    if (calendarKey === key) return;
+    calendarKey = key;
+    select.replaceChildren();
+    for (const start of s.upcoming) {
+      const option = document.createElement('option');
+      option.value = String(start);
+      option.textContent = fullFormat.format(start);
+      select.append(option);
+    }
+    select.value = String(chosen);
+    const event = calendarEvent(chosen, duration);
+    $('calendar-google').href = googleCalendarUrl(event);
+    const file = new Blob([calendarFile(event, now())], { type: 'text/calendar;charset=utf-8' });
+    const oldUrl = calendarBlobUrl;
+    calendarBlobUrl = URL.createObjectURL(file);
+    $('calendar-file').href = calendarBlobUrl;
+    $('calendar-file').download = 'FabProfit-Workshop-' + calendarStamp(chosen) + '.ics';
+    if (oldUrl) URL.revokeObjectURL(oldUrl);
+    $('calendar-local').textContent = 'Your time: ' + localFormat.format(chosen);
+    $('calendar-note').textContent = 'Save the event and check your 15-minute reminder in your calendar.' +
+      (!duration ? ' The calendar reserves one hour while the video loads.' : '');
+    $('calendar-actions').hidden = false;
+  }
   function render() {
     const s = session();
     renderSchedule(s);
+    renderCalendar(s);
     if (!videoUrl) {
       $('session-tag').textContent = 'Two showings daily';
       $('waiting-label').textContent = 'FabProfit System webinar';
@@ -471,16 +582,30 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   }
   $('join').addEventListener('click', () => {
     if (failed) { initializePlayer(); return; }
-    if (session().running) playCurrent(true);
+    if (session().running) {
+      if (soundOn) player.setMuted(true).then(updatePlayback).catch(() => {});
+      else playCurrent(true);
+    }
     else render();
   });
+  $('calendar-session')?.addEventListener('change', () => renderCalendar(session()));
   document.addEventListener('click', event => {
     if (event.target.closest?.('a[href="#guarantee"]')) {
       $('guarantee').open = true;
     }
   });
   document.addEventListener('visibilitychange', () => {
-    if (!document.hidden) syncClock().then(() => { render(); reconcile(true); });
+    if (!document.hidden) syncClock().then(async () => {
+      render();
+      const p = player;
+      if (!p || !ready || failed || !session().running) return;
+      try {
+        const paused = await p.getPaused();
+        if (p !== player || document.hidden || !session().running) return;
+        if (paused) playCurrent(false);
+        else reconcile(true);
+      } catch { /* The visible play button remains available if the browser blocks playback. */ }
+    });
   });
   render();
   syncClock().then(() => { render(); if (videoUrl) initializePlayer(); });
